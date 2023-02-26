@@ -24,10 +24,17 @@ mkdir /etc/sddm.conf.d
 systemctl start NetworkManager
 sleep 5
 
+# List network interfaces
+nmcli device status
+read -p "Enter the name of your WiFi device: " myWifi
+
 # Create the hotspot and set autoconnect to true
-nmcli device wifi hotspot ifname wlan0 ssid AstroArch password "astronomy"
+#nmcli device wifi hotspot ifname wlan0 ssid AstroArch password "astronomy"
+nmcli device wifi hotspot ifname ${myWifi} ssid AstroArch password "astronomy"
 nmcli connection modify Hotspot connection.autoconnect-priority -100
 nmcli connection modify Hotspot connection.autoconnect true
+# to show the password: nmcli dev wifi show-password 
+
 
 # Create Xauthority for x11vnc
 su astronaut -c "touch /home/astronaut/.Xauthority"
@@ -67,6 +74,9 @@ su astronaut -c "mkdir -p /home/astronaut/Desktop"
 su astronaut -c "cp /home/astronaut/.astroarch/desktop/Alacritty.desktop /home/astronaut/Desktop"
 su astronaut -c "cp /home/astronaut/.astroarch/desktop/org.kde.kstars.desktop /home/astronaut/Desktop"
 su astronaut -c "cp /home/astronaut/.astroarch/desktop/phd2.desktop /home/astronaut/Desktop"
+
+# Fix execution permission on desktop icons
+chmod +x /home/astronaut/Desktop/*.desktop
 
 # Remove actual novnc icons
 rm -r /usr/share/webapps/novnc/app/images/icons/*

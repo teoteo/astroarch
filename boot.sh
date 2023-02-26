@@ -5,10 +5,18 @@ sed -i 's/#ParallelDownloads = 5/ParallelDownloads=5/g' /etc/pacman.conf
 sed -i 's|\[core\]|\[astromatto\]\nSigLevel = Optional TrustAll\nServer = http://astroarch.astromatto.com:9000/$arch\n\n\[core\]|' /etc/pacman.conf
 
 # Bootstrap pacman-key
-pacman-key --init && pacman-key --populate archlinuxarm
+pacman-key --init && pacman-key --populate archlinux
 
 # Update all packages now
 pacman -Syu --noconfirm
+
+# Add openssh
+pacman -S openssh --noconfirm
+systemctl enable --now sshd
+
+# Edit /etc/ssh/sshd_config to add "PermitRootLogin yes"
+sudo nano /etc/ssh/sshd_config 
+sudo systemctl restart sshd
 
 # Install just 2 packages for the next actions
 pacman -S wget sudo git --noconfirm
@@ -31,9 +39,15 @@ pacman -Syu base-devel pipewire-jack gnu-free-fonts pipewire-media-session \
 	knotifyconfig kplotting qt5-datavis3d qt5-quickcontrols \
 	qt5-websockets qtkeychain stellarsolver xf86-video-fbdev \
 	xplanet plasma-nm dhcp dnsmasq x11vnc gedit plasma-systemmonitor \
-	dolphin uboot-tools usbutils cloud-guest-utils samba paru \
-	websockify novnc astrometry.net gsc kstars phd2 \
-	indi-3rdparty-libs indi-3rdparty-drivers linux-rpi linux-rpi-headers --noconfirm --ask 4
+	dolphin uboot-tools usbutils cloud-guest-utils samba dhcpcd paru --noconfirm --ask 4
+	
+# login as other user
+echo "now acces as not root user"
+exit
+
+# Add AUR packages
+su astronaut -c paru -S websockify novnc astrometry.net gsc kstars phd2 \
+indi-3rdparty-libs indi-3rdparty-drivers --noconfirm --ask 4
 
 # Allow wheelers to sudo without password to install packages
 sed -i 's/# %wheel ALL=(ALL:ALL) NOPASSWD: ALL/%wheel ALL=(ALL:ALL) NOPASSWD: ALL/g' /etc/sudoers

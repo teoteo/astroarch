@@ -64,9 +64,18 @@ su astronaut -c "cp /home/astronaut/.astroarch/wallpapers/bubble.jpg /home/astro
 
 # Copy desktop icons
 su astronaut -c "mkdir -p /home/astronaut/Desktop"
-su astronaut -c "cp /home/astronaut/.astroarch/desktop/Alacritty.desktop /home/astronaut/Desktop"
+su astronaut -c "cp /home/astronaut/.astroarch/desktop/org.kde.konsole.desktop /home/astronaut/Desktop"
 su astronaut -c "cp /home/astronaut/.astroarch/desktop/org.kde.kstars.desktop /home/astronaut/Desktop"
 su astronaut -c "cp /home/astronaut/.astroarch/desktop/phd2.desktop /home/astronaut/Desktop"
+su astronaut -c "ln -s /usr/share/applications/astrodmx_capture.desktop /home/astronaut/Desktop/AstroDMx_capture"
+
+# Make the icons executable so there will be no ! on the first boot
+chmod +x /home/astronaut/Desktop/*
+
+# Remove actual novnc icons
+rm -r /usr/share/webapps/novnc/app/images/icons/*
+# Copy custom novnc icons folder
+cp -r /home/astronaut/.astroarch/assets/icons/* /usr/share/webapps/novnc/app/images/icons
 
 # Remove actual novnc icons
 rm -r /usr/share/webapps/novnc/app/images/icons
@@ -80,6 +89,12 @@ echo "127.0.1.1          astroarch" >> /etc/hosts
 
 # Copy the screensaver config, by default it is off
 su astronaut -c "cp /home/astronaut/.astroarch/configs/kscreenlockerrc /home/astronaut/.config/kscreenlockerrc"
+
+# If we are on a raspberry let's adjust /boot/config.txt
+if [ $(cat /proc/cpuinfo | grep -c Raspberry) -eq 1 ]; then
+    echo dtparam=i2c_arm=on >> /boot/config.txt
+    echo dtoverlay=i2c-rtc >> /boot/config.txt
+fi
 
 # Reboot and enjoy now
 reboot

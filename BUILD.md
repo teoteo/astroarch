@@ -20,8 +20,8 @@ The next commands assume that after `type X` an `enter` is given to confirm the 
 
 - Run fdisk typing `sudo fdisk /dev/mmcblk0`
 - type `o` this will wipe all the existing partitions from the card
-- type `n` then `p` then `1`, when prompted for the first sector press `enter`, when prompted for the last sector type `+256M` (some guides report `100M` but from
-personal experience that is not enough)
+- type `n` then `p` then `1`, when prompted for the first sector press `enter`, when prompted for the last sector type `+512M` (some guides report `100M` but from
+personal experience that is not enough as after all updates the boot partition will be full)
 - type `t` and then type `0c` to modify the just created partition to `W95FAT LBA`
 - type `n` then `p` and take note of the number under `End` this will be used as starting point for the next partition
 - type `n` then `p` then `2`, when prompted for the `First sector` check if the default value is bigger than the number you noted before, if it's bigger confirm
@@ -67,27 +67,27 @@ be `alarm`
 You'll be dropped into `alarm` shell and now we can proceed:
 - become sudo with `su -` the password is `root`
 - type `curl https://raw.githubusercontent.com/devDucks/astroarch/main/astroarch_build.sh > astroarch_build.sh`
-- type `bash boot.sh`
+- type `bash astroarch_build.sh`
 
 This is the only thing required, the rest of the procedure is fully automated!
 
 ## Manual steps to finalize the image
 After reboot, few final steps may be made to improve further the final image, mainly:
-- Use PARTUUID in `/etc/fstab` so that the image can start with every media attached (SD, USB, HDD, SDD)
-  Dump the following table into `/etc/fstab`, to know the partition id simply run `sudo blkid` and look for PARTUUID values
+- Use UUID in `/etc/fstab` so that the image can start with every media attached (SD, USB, HDD, SDD)
+  Dump the following table into `/etc/fstab`, to know the partition id simply run `sudo blkid` and look for UUID values
   ```
   # Static information about the filesystems.
   # See fstab(5) for details.
 
   # <file system> <dir> <type> <options> <dump> <pass>
-  PARTUUID=XXXXXXX-01  /boot   vfat    defaults,noexec,nodev,showexec        0       0
-  PARTUUID=XXXXXXX-02  /       ext4    rw,realtime                           0       1
+  UUID=XXXX-XXXX  /boot   vfat    defaults        0       0
+  UUID=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX  / ext4 defaults 0 1
   ```
 - Set the theme to dark breeze
 - Set a wallpaper
 - Edit `/boot/cmdline.txt` replacing the default content with
   ```
-  root=PARTUUID=cafd14b5-02 rw rootwait console=serial0,115200 console=tty1 selinux=0 quiet splash plymouth.ignore-serial-consoles smsc95xx.turbo_mode=N dwc_otg.lpm_enable=0 usbhid.mousepoll=8 audit=0 rootfstype=ext4 fsck.repair=yes
+  root=UUID=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX rw rootwait console=serial0,115200 console=tty1 fsck.repair=yes
   ```
 - start Kstars without acknowledging any message, start ekos simulator, go to the guiding tab and download the most common indexes
 - enable the resize script to do its magic on the user's first boot - run `sudo systemctl enable resize_once`

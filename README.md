@@ -9,6 +9,7 @@
 
 
 Please find below some (hopefully) useful instructions, if you are here instead because you want to know how you can build this image from scratch, see [this](https://github.com/MattBlack85/astroarch/blob/main/BUILD.md)
+ - [Quick video intro](#quick-video-intro-to-astroarch)
  - [What Raspberry is supported?](#what-raspberry-version-is-supported)
  - [Kstars hours is not correct, how can I fix it?](#set-timezone)
  - [what are the passwords for the user and the hotspot?](#passwords)
@@ -17,7 +18,7 @@ Please find below some (hopefully) useful instructions, if you are here instead 
  - [Useful commands](#useful-commands)
  - [On first boot - things to know](#first-boot)
  - [Connecting via noVNC (browser)](#connecting-via-browser-novnc)
- - [How can I boot from USB/SDD?](#boot-from-external-disk)
+ - [How can I boot from USB/SDD?](#boot-from-external-disk-usb-hdd-ssd-nvme)
  - [List of available software](#software-available)
  - [How can I add a RTC to AstroArch?](#how-to-add-a-rtc)
  - [reporting problems](#reporting-issues)
@@ -25,7 +26,7 @@ Please find below some (hopefully) useful instructions, if you are here instead 
  - [How to make a GPS dongle working?](#using-a-gps-dongle)
 
 # What Raspberry version is supported?
-AstroArch runs on any raspberry capable to run aarch64 OS, this means `Raspberry Pi 3` `Raspberry Pi 4` and of course `Raspberry Pi 5`
+AstroArch runs on any raspberry capable to run aarch64 OS, this means `Raspberry Pi 4` and of course `Raspberry Pi 5`
 
 # Set timezone
 Do not forget to set the right timezone! to do so run `sudo timedatectl set-timezone Foo/Bar` where Foo/Bar is something like `Europe/Rome`
@@ -33,7 +34,7 @@ Do not forget to set the right timezone! to do so run `sudo timedatectl set-time
 # Passwords
 To save you some time, here the default password you will need for AstroArch:
  - the user password for `astronaut` (which is the user used to login or for ssh) is `astro`
- - the password for the `AstroArch` WiFi hotspot is `astronomy`
+ - the password for the `AstroArch-XXXXXXX` WiFi hotspot is `astronomy`
 
 # Use only the astro packages mantained for AstroArch on PC and mini PC
 If you have an x64 distro based on ArchLinux on your PC and you just want to access the packages I mantain (kstas, phd2, stellarsolver, indi, indi libs and drivers) add my repo to your pacman.conf file (under /etc/pacman.conf) **before** the [core] section, the repo looks like the following
@@ -46,7 +47,7 @@ Server = http://astroarch.astromatto.com:9000/$arch
 after that run `sudo pacman -Sy && sudo pacman -S kstars phd2 indi-3rdparty-drivers stellarsolver`
 
 # Download
-Please use this link to download the latest astroarch gzipped img file => https://drive.google.com/file/d/1A0QXxVALT0iZ9pXmOD9_c2AotuZZQ2wj/view
+Please use this link to download the latest astroarch gzipped img file => https://drive.google.com/file/d/1vzjsdnsjHVAxAyEpe2_x1QqqdAXlll5u/view
 
 # Flash the img to an SD
 If you prefer a GUI, use [balenaHetcher](https://www.balena.io/etcher/) otherwise you can use the unix `dd` to flash it, and if you are using `dd` I think
@@ -108,16 +109,8 @@ $ sudo echo "/swapfile   none    swap    sw              0       0" | sudo tee -
 ```
 
 
-# Boot from external disk
-If you want to use a USB or a SDD to boot AstroArch, follow the next steps:
-1) flash the image to the USB/HDD/SDD the same way you would flash to a SD card
-2) plug the disk into the raspberry, boot it up
-3) edit (highly recommended via SSH) the file `/etc/systemd/system/resize_once.service` - change the line 7 from `/dev/mmcblk0` to `/dev/sda` or to `/dev/nvme0n1` depending on your media
-4) THIS STEP IS NEEDED ONLY FOR USB OR HDD, not for NVMe disks! => On the line ExecStop there is a \p, drop the p and save the file
-5) run in the terminal `sudo systemctl daemon-reload`
-6) run in the terminal `sudo systemctl start resize_once`
-
-The partition is extended now and you can boot from your external device
+# Boot from external disk (USB, HDD, SSD, NVME)
+If you want to use an alternative media to boot AstroArch, just flash the image to your support and it will work out of the box! No special steps are required
 
 
 # Software available
@@ -143,6 +136,10 @@ the following software will be available, by category
 - tigervnc (x0vncserver)
 - noVNC
 
+### Browser
+- chromium (like chrome, but without google tracking code)
+- firefox
+
 # How to add a RTC
 Adding a RTC to AstroArch is easy from version 1.6.
 First, wire your RTC to your pi, open a terminal and type `sudo i2cdetect -y 1` you should see a similar table, take note of the number for the next steps
@@ -163,3 +160,9 @@ TODO
 
 # Reporting issues
 AstroArch is actually in a stable state, however, should you find any issue please report them here https://github.com/MattBlack85/astroarch/issues this will help me tracking them and ship a fix for them
+
+# Quick video intro to AstroArch
+
+https://github.com/devDucks/astroarch/assets/4163222/27bb0842-2db0-4db7-83e5-c513c8e02f5a
+
+

@@ -4,7 +4,7 @@ Plasma 6.8 no longer has an X11 session, and today's AstroArch remote access (x0
 
 | Access | Today (X11) | Wayland preview |
 | --- | --- | --- |
-| RDP, port 3389 | XRDP, a separate session per login | KRdp, the same desktop you see on HDMI/VNC |
+| RDP, port 3389 | XRDP, a separate session per login | KRdp (RemoteFX), the same desktop you see on HDMI/VNC |
 | VNC, port 5900 | x0vncserver | TigerVNC `w0vncserver`, capped at 5 fps |
 | Browser, port 8080 | noVNC → x0vncserver | noVNC → w0vncserver (unchanged service) |
 | Kiosk | separate XRDP session | **not available** in the preview |
@@ -68,5 +68,14 @@ Please post in the AstroArch Discord, with your Pi model and RAM:
 
 - No kiosk session yet.
 - RDP no longer opens a separate session per login. It shares the desktop of the logged-in user.
-- With the screen changing fast (live view, panning the sky map), remote viewing costs far more CPU than on X11. Prefer one viewer at a time on a Pi 4.
+- Every remote path costs more CPU than on X11, much more when the screen changes fast (live view, panning the sky map). For just watching a session, VNC is the lightest. Prefer one viewer at a time on a Pi 4.
+- RDP uses RemoteFX. You can try H.264, which costs more CPU on a still screen but sends about four times less data when the screen changes fast:
+
+  ```bash
+  mkdir -p ~/.config/systemd/user/app-org.kde.krdpserver.service.d
+  printf '[Service]\nEnvironment=KRDP_DISABLE_H264=0\n' > ~/.config/systemd/user/app-org.kde.krdpserver.service.d/h264.conf
+  systemctl --user daemon-reload && systemctl --user restart app-org.kde.krdpserver
+  ```
+
+  Clients that decode H.264 with OpenH264 (Royal TSX and Remmina on macOS, for example) then show a white screen, until KPipeWire's frame-rate fix ships ([bug 526931](https://bugs.kde.org/show_bug.cgi?id=526931)). Delete `h264.conf` and run the last line again to go back.
 - KRdp in Plasma 6.8 sends no sound.

@@ -70,6 +70,7 @@ Please post in the AstroArch Discord, with your Pi model and RAM:
 - No kiosk session yet.
 - RDP no longer opens a separate session per login: it takes over the desktop of the logged-in user.
 - Someone at the Pi's monitor sees the login screen while an RDP client is connected.
+- About one RDP connection in eight shows no image (KRdp logs `Tried to make uncreated stream active` and never sends a frame). Disconnect and connect again.
 - Every remote path costs more CPU than on X11, much more when the screen changes fast (live view, panning the sky map). For just watching a session, VNC is the lightest. Prefer one viewer at a time on a Pi 4.
 - RDP uses RemoteFX. You can try H.264, which costs more CPU on a still screen but sends about four times less data when the screen changes fast:
 

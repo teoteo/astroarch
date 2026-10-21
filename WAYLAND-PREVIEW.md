@@ -56,6 +56,8 @@ sudo astroarch-session status
 
 Switching restarts the session, so it refuses while KStars, INDI or PHD2 are running (add `--force` to switch anyway). In kiosk mode RDP logs in as `astronaut-kiosk` (password `astro`); VNC and noVNC work as usual.
 
+The AstroArch-config-kiosk tool on the kiosk desktop works as before: desktop icon, menu entry, automatic launch and watchdog for KStars, PHD2, AstroDMx Capture and xgps. On Wayland the last two become systemd user services (`astroarch-kiosk-app@kstars` and so on), and the preview script carries over what you had set in the X11 `.xinitrc`.
+
 ## What to report
 
 Please post in the AstroArch Discord, with your Pi model and RAM:
@@ -79,7 +81,7 @@ Please post in the AstroArch Discord, with your Pi model and RAM:
 
 ## Known limits
 
-- The kiosk replaces the desktop instead of running next to it, and its app list (the AstroArch-config-kiosk tool) still edits the X11 `.xinitrc`, so apps don't start by themselves yet.
+- The kiosk replaces the desktop instead of running next to it: you can't use both at the same time.
 - RDP no longer opens a separate session per login: it takes over the desktop of the logged-in user.
 - Someone at the Pi's monitor sees the login screen while an RDP client is connected.
 - About one RDP connection in eight shows no image (KRdp logs `Tried to make uncreated stream active` and never sends a frame). Disconnect and connect again.

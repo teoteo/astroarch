@@ -112,6 +112,30 @@ _setup_remote_user "$TARGET_USER"
 if getent passwd "$KIOSK_USER" > /dev/null; then
     _setup_remote_user "$KIOSK_USER"
 fi
+
+# Kiosk apps: systemd user units instead of .xinitrc lines, keeping the choices already made there
+install -Dm755 "$REPO_DIR/scripts/astroarch-kiosk-app.sh" /usr/local/bin/astroarch-kiosk-app
+install -Dm644 "$REPO_DIR/systemd/user/astroarch-kiosk-app@.service" /etc/systemd/user/astroarch-kiosk-app@.service
+_migrate_kiosk_app() {
+    local app="$1" start="$2" watch="$3" home xinitrc unit
+    home="$(getent passwd "$KIOSK_USER" | cut -d: -f6)"
+    xinitrc="$home/.xinitrc"
+    unit="astroarch-kiosk-app@$app.service"
+    [ -f "$xinitrc" ] || return 0
+    if grep -qE "^[[:space:]]*$start" "$xinitrc" || grep -qE "^[[:space:]]*$watch" "$xinitrc"; then
+        sudo -u "$KIOSK_USER" ln -sfn /etc/systemd/user/astroarch-kiosk-app@.service "$home/.config/systemd/user/plasma-workspace.target.wants/$unit"
+    fi
+    if grep -qE "^[[:space:]]*$watch" "$xinitrc"; then
+        sudo -u "$KIOSK_USER" mkdir -p "$home/.config/systemd/user/$unit.d"
+        printf '[Service]\nRestart=always\n' | sudo -u "$KIOSK_USER" tee "$home/.config/systemd/user/$unit.d/watchdog.conf" > /dev/null
+    fi
+}
+if getent passwd "$KIOSK_USER" > /dev/null; then
+    _migrate_kiosk_app kstars 'kstars &' 'pgrep -x kstars'
+    _migrate_kiosk_app phd2 'phd2 &' 'pgrep -x "phd2.bin"'
+    _migrate_kiosk_app astrodmx '/opt/AstroDMx-Capture/bin/AstroDMx-Capture &' 'pgrep -f AstroDMx-Capture'
+    _migrate_kiosk_app xgps 'xgps &' 'pgrep -x xgps'
+fi
 install -Dm755 "$REPO_DIR/scripts/astroarch-session.sh" /usr/local/bin/astroarch-session
 
 # Remember what was applied, for bug reports

@@ -6,6 +6,54 @@ MENU_FILE="/home/astronaut-kiosk/.config/menus/plasma-applications.menu"
 
 DESKTOP_DIR="/home/astronaut-kiosk/Desktop"
 
+# Wayland preview: apps start as systemd user units (astroarch-kiosk-app@<app>) instead of .xinitrc lines
+WAYLAND=0
+[ -f /etc/astroarch/wayland-preview ] && WAYLAND=1
+UNIT_DIR="$HOME/.config/systemd/user"
+declare -A UNIT_APP
+UNIT_APP["kstars &"]=kstars
+UNIT_APP["pgrep -x kstars"]=kstars
+UNIT_APP["phd2 &"]=phd2
+UNIT_APP['pgrep -x "phd2.bin"']=phd2
+UNIT_APP["AstroDMx-Capture/bin/AstroDMx-Capture &"]=astrodmx
+UNIT_APP["pgrep -f AstroDMx-Capture"]=astrodmx
+UNIT_APP["xgps &"]=xgps
+UNIT_APP["pgrep -x xgps"]=xgps
+
+# Auto launch = unit enabled with the session; watchdog = Restart=always drop-in
+unit_state() {
+    local pattern="$1"
+    local unit="astroarch-kiosk-app@${UNIT_APP[$pattern]}.service"
+
+    if [[ "$pattern" == pgrep* ]]; then
+        [ -f "$UNIT_DIR/$unit.d/watchdog.conf" ] && echo "Enabled" || echo "Disabled"
+    else
+        systemctl --user is-enabled --quiet "$unit" && echo "Enabled" || echo "Disabled"
+    fi
+}
+
+set_unit_state() {
+    local state="$1"
+    local pattern="$2"
+    local unit="astroarch-kiosk-app@${UNIT_APP[$pattern]}.service"
+
+    if [[ "$pattern" == pgrep* ]]; then
+        if [ "$state" = "on" ]; then
+            mkdir -p "$UNIT_DIR/$unit.d"
+            printf '[Service]\nRestart=always\n' > "$UNIT_DIR/$unit.d/watchdog.conf"
+            # As with the X11 watchdog loop, a watched app is started even without auto launch
+            systemctl --user enable --quiet "$unit"
+        else
+            rm -f "$UNIT_DIR/$unit.d/watchdog.conf"
+        fi
+    elif [ "$state" = "on" ]; then
+        systemctl --user enable --quiet "$unit"
+    else
+        systemctl --user disable --quiet "$unit"
+    fi
+    systemctl --user daemon-reload
+}
+
 declare -A DESKTOP_APPS
 DESKTOP_APPS['APPS\["/usr/share/applications/org.kde.kstars.desktop"\]']="/usr/share/applications/org.kde.kstars.desktop|Kstars"
 DESKTOP_APPS['APPS\["/usr/share/applications/phd2.desktop"\]']="/usr/share/applications/phd2.desktop|PHD2"
@@ -44,7 +92,7 @@ set_desktop_icon() {
 
 
 # Verify that the files exist
-if [ ! -f "$XINITRC" ]; then
+if [ "$WAYLAND" -eq 0 ] && [ ! -f "$XINITRC" ]; then
     kdialog --error "File $XINITRC not found!"
     exit 1
 fi
@@ -60,6 +108,11 @@ is_active() {
 
     if [[ -n "${DESKTOP_APPS[$pattern]}" ]]; then
         desktop_icon_state "$pattern"
+        return
+    fi
+
+    if [ "$WAYLAND" -eq 1 ] && [[ -n "${UNIT_APP[$pattern]}" ]]; then
+        unit_state "$pattern"
         return
     fi
 
@@ -85,6 +138,11 @@ set_state_bash() {
 
     if [[ -n "${DESKTOP_APPS[$pattern]}" ]]; then
         set_desktop_icon "$state" "$pattern"
+        return
+    fi
+
+    if [ "$WAYLAND" -eq 1 ] && [[ -n "${UNIT_APP[$pattern]}" ]]; then
+        set_unit_state "$state" "$pattern"
         return
     fi
 
@@ -278,7 +336,7 @@ while true; do
             ;;
         backup)
             TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-            cp "$XINITRC" "${XINITRC}.backup.${TIMESTAMP}"
+            [ -f "$XINITRC" ] && cp "$XINITRC" "${XINITRC}.backup.${TIMESTAMP}"
             cp "$MENU_FILE" "${MENU_FILE}.backup.${TIMESTAMP}"
             kdialog --msgbox "Backup created successfully !\n\nTimestamp: $TIMESTAMP"
             ;;

@@ -1,0 +1,6 @@
+# xdg-desktop-portal resolves app-org.astroarch.vnc.service to this app id only if this file exists
+[Desktop Entry]
+Type=Application
+Name=AstroArch VNC
+Exec=/usr/bin/w0vncserver
+NoDisplay=true

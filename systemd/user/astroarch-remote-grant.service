@@ -1,0 +1,11 @@
+[Unit]
+Description=AstroArch: allow VNC and RDP to share the desktop without asking
+PartOf=graphical-session.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/flatpak permission-set kde-authorized remote-desktop org.astroarch.vnc yes
+ExecStart=/usr/bin/flatpak permission-set kde-authorized remote-desktop org.kde.krdpserver yes
+
+[Install]
+WantedBy=plasma-workspace.target

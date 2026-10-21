@@ -1,0 +1,19 @@
+[Unit]
+Description=AstroArch VNC (TigerVNC w0vncserver through the KDE portal)
+# w0vncserver fails if it starts before the portal. The portal starts after graphical-session.target,
+# which waits for everything plasma-workspace.target pulls in by default: drop that implicit ordering.
+DefaultDependencies=no
+Wants=xdg-desktop-portal.service astroarch-remote-grant.service
+After=basic.target xdg-desktop-portal.service plasma-xdg-desktop-portal-kde.service astroarch-remote-grant.service
+Conflicts=shutdown.target
+Before=shutdown.target
+PartOf=graphical-session.target
+
+[Service]
+# 5 fps: the portal capture keeps KWin busy whatever the cap, the cap trims the encoder
+ExecStart=/usr/bin/w0vncserver -rfbport=5900 -AlwaysShared=1 -FrameRate=5 -SecurityTypes=VncAuth -PasswordFile=%h/.config/astroarch/vnc.passwd
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=plasma-workspace.target

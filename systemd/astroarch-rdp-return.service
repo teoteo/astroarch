@@ -1,0 +1,11 @@
+[Unit]
+Description=AstroArch: give the screen back to the desktop session after an RDP RemoteAccess client leaves
+After=systemd-logind.service display-manager.service
+
+[Service]
+ExecStart=/usr/local/bin/astroarch-rdp-return.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=graphical.target

@@ -35,7 +35,8 @@ TARGET_HOME="$(getent passwd "$TARGET_USER" | cut -d: -f6)"
 
 echo "This switches this system to the Plasma Wayland preview:"
 echo "  - full system upgrade, removing plasma-x11-session"
-echo "  - RDP (3389) by KRdp, VNC (5900) and noVNC (8080) by w0vncserver, on the same desktop"
+echo "  - RDP (3389) by KRdp, sized to the client window; VNC (5900) and noVNC (8080) by w0vncserver"
+echo "  - SDDM is replaced by Plasma Login Manager, with autologin"
 echo "  - xrdp, x0vncserver and the kiosk session are disabled"
 echo "There is no way back to X11 other than flashing the image again. Use a test SD card."
 if [ "$ASSUME_YES" -ne 1 ]; then
@@ -47,9 +48,9 @@ fi
 rm -f "$KEEP_X11_HOOK"
 
 # Full upgrade; --ask 4 accepts removing plasma-x11-session, which conflicts with Plasma >= 6.8
-pacman -Syu --needed --noconfirm --ask 4 krdp
+pacman -Syu --needed --noconfirm --ask 4 krdp plasma-login-manager
 
-for f in /usr/share/wayland-sessions/plasma.desktop /usr/bin/krdpserver /usr/bin/w0vncserver; do
+for f in /usr/share/wayland-sessions/plasma.desktop /usr/bin/krdpserver /usr/bin/w0vncserver /usr/bin/plasmalogin; do
     if [ ! -e "$f" ]; then
         echo "$f is missing after the upgrade, stopping before touching the session" >&2
         exit 1
@@ -60,8 +61,16 @@ echo "Plasma: $(pacman -Q plasma-workspace), $(pacman -Q krdp), $(pacman -Q tige
 # Stop starting the X11 remote stack at boot; it keeps running until the reboot
 systemctl disable x0vncserver.service xrdp.service xrdp-sesman.service xrdp-autostart-kiosk.service 2>/dev/null || true
 
-# SDDM: Wayland greeter and Plasma Wayland autologin
-install -Dm644 "$REPO_DIR/configs/wayland-preview/zz-wayland-preview.conf" /etc/sddm.conf.d/zz-wayland-preview.conf
+# Plasma Login Manager instead of SDDM: KRdp's RemoteAccess mode hands the physical seat to it
+install -Dm644 "$REPO_DIR/configs/wayland-preview/plasmalogin.conf" /etc/plasmalogin.conf
+sed -i "s/^User=.*/User=$TARGET_USER/" /etc/plasmalogin.conf
+systemctl disable sddm.service 2>/dev/null || true
+systemctl enable plasmalogin.service
+
+# After an RDP client leaves, give the screen back to the desktop session so VNC/noVNC see it again
+install -Dm755 "$REPO_DIR/scripts/astroarch-rdp-return.sh" /usr/local/bin/astroarch-rdp-return.sh
+install -Dm644 "$REPO_DIR/systemd/astroarch-rdp-return.service" /etc/systemd/system/astroarch-rdp-return.service
+systemctl enable astroarch-rdp-return.service
 
 # No blanking, suspend or lock: nobody is at the Pi to wake it
 install -Dm644 -b "$REPO_DIR/configs/wayland-preview/powerdevilrc" /etc/xdg/powerdevilrc

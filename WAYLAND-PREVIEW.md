@@ -4,11 +4,12 @@ Plasma 6.8 no longer has an X11 session, and today's AstroArch remote access (x0
 
 | Access | Today (X11) | Wayland preview |
 | --- | --- | --- |
-| RDP, port 3389 | XRDP, a separate session per login | KRdp (RemoteFX), the same desktop you see on HDMI/VNC |
+| RDP, port 3389 | XRDP, a separate session per login | KRdp (RemoteFX): your desktop, resized to the client window |
 | VNC, port 5900 | x0vncserver | TigerVNC `w0vncserver`, capped at 5 fps |
 | Browser, port 8080 | noVNC → x0vncserver | noVNC → w0vncserver (unchanged service) |
 | Kiosk | separate XRDP session | **not available** in the preview |
 | No monitor | Xorg dummy driver | the HDMI output forced on in `cmdline.txt` |
+| Login manager | SDDM | Plasma Login Manager, with autologin |
 
 Measurements from a Pi 5 are in the [Wayland bench report](https://claude.ai/artifact/9WEHFKx6mGp5qqVm1XbHSo).
 
@@ -41,7 +42,7 @@ Options: `--yes` skips the questions, `--reboot` reboots at the end, `sudo VNC_P
 | VNC (RealVNC, TigerVNC, bVNC) | `astroarch.local:5900` | VNC password (`astro` unless you set another) |
 | Browser | `http://astroarch.local:8080/vnc.html` | the same VNC password |
 
-VNC and RDP show the same desktop, so everyone connected sees the same screen.
+Everyone connected sees the same desktop. While an RDP client is connected, the desktop moves to a virtual screen the size of the RDP window (resize the window and the desktop follows), VNC/noVNC show that screen, and the HDMI output shows the login screen. About 10 seconds after the RDP client leaves, the desktop goes back to the HDMI output.
 
 ## What to report
 
@@ -67,7 +68,8 @@ Please post in the AstroArch Discord, with your Pi model and RAM:
 ## Known limits
 
 - No kiosk session yet.
-- RDP no longer opens a separate session per login. It shares the desktop of the logged-in user.
+- RDP no longer opens a separate session per login: it takes over the desktop of the logged-in user.
+- Someone at the Pi's monitor sees the login screen while an RDP client is connected.
 - Every remote path costs more CPU than on X11, much more when the screen changes fast (live view, panning the sky map). For just watching a session, VNC is the lightest. Prefer one viewer at a time on a Pi 4.
 - RDP uses RemoteFX. You can try H.264, which costs more CPU on a still screen but sends about four times less data when the screen changes fast:
 

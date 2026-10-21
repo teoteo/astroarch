@@ -7,7 +7,7 @@ Plasma 6.8 no longer has an X11 session, and today's AstroArch remote access (x0
 | RDP, port 3389 | XRDP, a separate session per login | KRdp (RemoteFX): your desktop, resized to the client window |
 | VNC, port 5900 | x0vncserver | TigerVNC `w0vncserver`, capped at 5 fps |
 | Browser, port 8080 | noVNC → x0vncserver | noVNC → w0vncserver (unchanged service) |
-| Kiosk | separate XRDP session | **not available** in the preview |
+| Kiosk | separate XRDP session, next to the desktop | an alternative autologin profile: `sudo astroarch-session kiosk` |
 | No monitor | Xorg dummy driver | the HDMI output forced on in `cmdline.txt` |
 | Login manager | SDDM | Plasma Login Manager, with autologin |
 
@@ -42,7 +42,19 @@ Options: `--yes` skips the questions, `--reboot` reboots at the end, `sudo VNC_P
 | VNC (RealVNC, TigerVNC, bVNC) | `astroarch.local:5900` | VNC password (`astro` unless you set another) |
 | Browser | `http://astroarch.local:8080/vnc.html` | the same VNC password |
 
-Everyone connected sees the same desktop. While an RDP client is connected, the desktop moves to a virtual screen the size of the RDP window (resize the window and the desktop follows), VNC/noVNC show that screen, and the HDMI output shows the login screen. About 10 seconds after the RDP client leaves, the desktop goes back to the HDMI output. For a few seconds after that, a VNC viewer may show a partly black picture while Plasma redraws.
+Everyone connected sees the same desktop. While an RDP client is connected, the desktop moves to a virtual screen the size of the RDP window (resize the window and the desktop follows), VNC/noVNC show that screen, and the HDMI output shows the login screen. About 10 seconds after the RDP client leaves, the desktop goes back to the HDMI output.
+
+## Kiosk
+
+The kiosk is now a second autologin profile instead of a second session:
+
+```bash
+sudo astroarch-session kiosk     # log in as astronaut-kiosk
+sudo astroarch-session desktop   # back to the full desktop
+sudo astroarch-session status
+```
+
+Switching restarts the session, so it refuses while KStars, INDI or PHD2 are running (add `--force` to switch anyway). In kiosk mode RDP logs in as `astronaut-kiosk` (password `astro`); VNC and noVNC work as usual.
 
 ## What to report
 
@@ -67,7 +79,7 @@ Please post in the AstroArch Discord, with your Pi model and RAM:
 
 ## Known limits
 
-- No kiosk session yet.
+- The kiosk replaces the desktop instead of running next to it, and its app list (the AstroArch-config-kiosk tool) still edits the X11 `.xinitrc`, so apps don't start by themselves yet.
 - RDP no longer opens a separate session per login: it takes over the desktop of the logged-in user.
 - Someone at the Pi's monitor sees the login screen while an RDP client is connected.
 - About one RDP connection in eight shows no image (KRdp logs `Tried to make uncreated stream active` and never sends a frame). Disconnect and connect again.

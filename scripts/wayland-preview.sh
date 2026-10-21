@@ -12,6 +12,7 @@ TARGET_USER="${SUDO_USER:-astronaut}"
 VNC_PASSWORD="${VNC_PASSWORD:-astro}"
 CERT_DIR=/etc/astroarch/krdp
 KEEP_X11_HOOK=/etc/pacman.d/hooks/astroarch-keep-x11-session.hook
+KIOSK_USER=astronaut-kiosk
 
 ASSUME_YES=0
 REBOOT=0
@@ -31,7 +32,6 @@ if [ "$TARGET_USER" = root ]; then
     echo "Run it with sudo from the desktop user (e.g. astronaut), not from a root shell" >&2
     exit 1
 fi
-TARGET_HOME="$(getent passwd "$TARGET_USER" | cut -d: -f6)"
 
 echo "This switches this system to the Plasma Wayland preview:"
 echo "  - full system upgrade, removing plasma-x11-session"
@@ -92,16 +92,27 @@ chown root:"$TARGET_USER" "$CERT_DIR/krdp.key" "$CERT_DIR/krdp.crt"
 chmod 640 "$CERT_DIR/krdp.key" "$CERT_DIR/krdp.crt"
 
 # User side: RDP login with the system password, VNC password, units started with Plasma
-sudo -u "$TARGET_USER" HOME="$TARGET_HOME" LC_ALL=C.UTF-8 kwriteconfig6 --file krdpserverrc --group General --key SystemUserEnabled true
-sudo -u "$TARGET_USER" HOME="$TARGET_HOME" LC_ALL=C.UTF-8 kwriteconfig6 --file krdpserverrc --group General --key ListenPort 3389
-sudo -u "$TARGET_USER" mkdir -p "$TARGET_HOME/.config/astroarch" "$TARGET_HOME/.config/systemd/user/plasma-workspace.target.wants"
-printf '%s\n' "$VNC_PASSWORD" | vncpasswd -f > "$TARGET_HOME/.config/astroarch/vnc.passwd"
-chown "$TARGET_USER": "$TARGET_HOME/.config/astroarch/vnc.passwd"
-chmod 600 "$TARGET_HOME/.config/astroarch/vnc.passwd"
-WANTS="$TARGET_HOME/.config/systemd/user/plasma-workspace.target.wants"
-for unit in /etc/systemd/user/astroarch-remote-grant.service /etc/systemd/user/app-org.astroarch.vnc.service /usr/lib/systemd/user/app-org.kde.krdpserver.service; do
-    sudo -u "$TARGET_USER" ln -sfn "$unit" "$WANTS/$(basename "$unit")"
-done
+_setup_remote_user() {
+    local user="$1" home wants unit
+    home="$(getent passwd "$user" | cut -d: -f6)"
+    sudo -u "$user" HOME="$home" LC_ALL=C.UTF-8 kwriteconfig6 --file krdpserverrc --group General --key SystemUserEnabled true
+    sudo -u "$user" HOME="$home" LC_ALL=C.UTF-8 kwriteconfig6 --file krdpserverrc --group General --key ListenPort 3389
+    sudo -u "$user" mkdir -p "$home/.config/astroarch" "$home/.config/systemd/user/plasma-workspace.target.wants"
+    printf '%s\n' "$VNC_PASSWORD" | vncpasswd -f > "$home/.config/astroarch/vnc.passwd"
+    chown "$user": "$home/.config/astroarch/vnc.passwd"
+    chmod 600 "$home/.config/astroarch/vnc.passwd"
+    wants="$home/.config/systemd/user/plasma-workspace.target.wants"
+    for unit in /etc/systemd/user/astroarch-remote-grant.service /etc/systemd/user/app-org.astroarch.vnc.service /usr/lib/systemd/user/app-org.kde.krdpserver.service; do
+        sudo -u "$user" ln -sfn "$unit" "$wants/$(basename "$unit")"
+    done
+}
+_setup_remote_user "$TARGET_USER"
+
+# The kiosk is an alternative autologin profile (astroarch-session kiosk): same remote access
+if getent passwd "$KIOSK_USER" > /dev/null; then
+    _setup_remote_user "$KIOSK_USER"
+fi
+install -Dm755 "$REPO_DIR/scripts/astroarch-session.sh" /usr/local/bin/astroarch-session
 
 # Remember what was applied, for bug reports
 echo "wayland-preview applied $(date -Is) from $(git -C "$REPO_DIR" rev-parse --short HEAD 2>/dev/null || echo unknown)" > /etc/astroarch/wayland-preview

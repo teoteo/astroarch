@@ -92,8 +92,8 @@ chown root:"$TARGET_USER" "$CERT_DIR/krdp.key" "$CERT_DIR/krdp.crt"
 chmod 640 "$CERT_DIR/krdp.key" "$CERT_DIR/krdp.crt"
 
 # User side: RDP login with the system password, VNC password, units started with Plasma
-sudo -u "$TARGET_USER" HOME="$TARGET_HOME" kwriteconfig6 --file krdpserverrc --group General --key SystemUserEnabled true
-sudo -u "$TARGET_USER" HOME="$TARGET_HOME" kwriteconfig6 --file krdpserverrc --group General --key ListenPort 3389
+sudo -u "$TARGET_USER" HOME="$TARGET_HOME" LC_ALL=C.UTF-8 kwriteconfig6 --file krdpserverrc --group General --key SystemUserEnabled true
+sudo -u "$TARGET_USER" HOME="$TARGET_HOME" LC_ALL=C.UTF-8 kwriteconfig6 --file krdpserverrc --group General --key ListenPort 3389
 sudo -u "$TARGET_USER" mkdir -p "$TARGET_HOME/.config/astroarch" "$TARGET_HOME/.config/systemd/user/plasma-workspace.target.wants"
 printf '%s\n' "$VNC_PASSWORD" | vncpasswd -f > "$TARGET_HOME/.config/astroarch/vnc.passwd"
 chown "$TARGET_USER": "$TARGET_HOME/.config/astroarch/vnc.passwd"

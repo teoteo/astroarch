@@ -42,7 +42,7 @@ Options: `--yes` skips the questions, `--reboot` reboots at the end, `sudo VNC_P
 | VNC (RealVNC, TigerVNC, bVNC) | `astroarch.local:5900` | VNC password (`astro` unless you set another) |
 | Browser | `http://astroarch.local:8080/vnc.html` | the same VNC password |
 
-Everyone connected sees the same desktop. While an RDP client is connected, the desktop moves to a virtual screen the size of the RDP window (resize the window and the desktop follows), VNC/noVNC show that screen, and the HDMI output shows the login screen. About 10 seconds after the RDP client leaves, the desktop goes back to the HDMI output.
+Everyone connected sees the same desktop. While an RDP client is connected, the desktop moves to a virtual screen the size of the RDP window (resize the window and the desktop follows), VNC/noVNC show that screen, and the HDMI output shows the login screen. About 10 seconds after the RDP client leaves, the desktop goes back to the HDMI output. For a few seconds after that, a VNC viewer may show a partly black picture while Plasma redraws.
 
 ## What to report
 

@@ -84,7 +84,7 @@ Please post in the AstroArch Discord, with your Pi model and RAM:
 - The kiosk replaces the desktop instead of running next to it: you can't use both at the same time.
 - RDP no longer opens a separate session per login: it takes over the desktop of the logged-in user.
 - Someone at the Pi's monitor sees the login screen while an RDP client is connected.
-- About one RDP connection in six shows no image: the desktop portal session never starts ([KDE bug 527555](https://bugs.kde.org/show_bug.cgi?id=527555)). Disconnect and connect again.
+- About one RDP connection in five shows no image: KRdp misses the desktop portal's answer and the session never starts ([KDE bug 527555](https://bugs.kde.org/show_bug.cgi?id=527555)). Disconnect and connect again. The fix is under review in KRdp ([merge request 282](https://invent.kde.org/plasma/krdp/-/merge_requests/282)).
 - Every remote path costs more CPU than on X11, much more when the screen changes fast (live view, panning the sky map). For just watching a session, VNC is the lightest. Prefer one viewer at a time on a Pi 4.
 - RDP uses RemoteFX. You can try H.264, which costs more CPU on a still screen but sends about four times less data when the screen changes fast:
 

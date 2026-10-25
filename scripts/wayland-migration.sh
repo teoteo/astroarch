@@ -130,13 +130,14 @@ migration() {
     }
 
     # Enable a user unit for one user by creating the "wants" link
-    # (what "systemctl --user enable" does, but without a user bus)
+    # (what "systemctl --user enable" does, but without a user bus).
+    # Optional third argument: the link name, for a template instance.
     enable_user_unit() {
-        local u=$1 path=$2
+        local u=$1 path=$2 name=${3:-$(basename "$2")}
         local dir="/home/$u/.config/systemd/user/graphical-session.target.wants"
         as_user "$u" mkdir -p "$dir" \
-            && as_user "$u" ln -sfn "$path" "$dir/$(basename "$path")" \
-            || step_fail "enable $(basename "$path") for $u"
+            && as_user "$u" ln -sfn "$path" "$dir/$name" \
+            || step_fail "enable $name for $u"
     }
 
     cat <<'EOF'
@@ -180,7 +181,11 @@ EOF
 
     # -----------------------------------------------------------------------
     # 3. Remove X11 session + XRDP packages
+    #    The keep-X11 pacman hook (PR #278) aborts any removal of
+    #    plasma-x11-session unless this marker exists
     # -----------------------------------------------------------------------
+    mkdir -p /etc/astroarch
+    touch /etc/astroarch/wayland
     local PKGS=() p
     for p in plasma-x11-session xorgxrdp xrdp; do
         pacman -Qq "$p" > /dev/null 2>&1 && PKGS+=("$p")
@@ -281,28 +286,15 @@ EOF
     # -----------------------------------------------------------------------
     log "Installing user services for: $SERVICE_USERS"
 
-    # w0vncserver unit (system-wide location, enabled per user below)
-    ln -sfn "$REPO/systemd/w0vncserver.service" /etc/systemd/user/w0vncserver.service
-    ln -sfn "$REPO/systemd/w0vncserver-kiosk.service" /etc/systemd/user/w0vncserver-kiosk.service
+    # w0vncserver unit (system-wide location, enabled per user below).
+    # The desktop file gives it the app ID org.astroarch.vnc in the portal.
+    ln -sfn "$REPO/systemd/app-org.astroarch.vnc@.service" "/etc/systemd/user/app-org.astroarch.vnc@.service"
+    mkdir -p /usr/local/share/applications
+    ln -sfn "$REPO/configs/org.astroarch.vnc.desktop" /usr/local/share/applications/org.astroarch.vnc.desktop
 
     # One-shot: "flatpak permission-set" needs the user's session bus, so it
     # cannot run here. It runs once at the first Wayland login instead.
-    cat > /etc/systemd/user/astroarch-portal-permissions.service <<'EOF'
-[Unit]
-Description=AstroArch: authorize remote desktop portal (once per user)
-After=graphical-session.target
-ConditionPathExists=!%h/.config/astroarch/portal-permissions.done
-
-[Service]
-Type=oneshot
-ExecStart=/usr/bin/flatpak permission-set kde-authorized remote-desktop org.kde.krdpserver yes
-ExecStart=/usr/bin/flatpak permission-set kde-authorized remote-desktop "" yes
-ExecStartPost=/usr/bin/mkdir -p %h/.config/astroarch
-ExecStartPost=/usr/bin/touch %h/.config/astroarch/portal-permissions.done
-
-[Install]
-WantedBy=graphical-session.target
-EOF
+    ln -sfn "$REPO/systemd/astroarch-portal-permissions.service" /etc/systemd/user/astroarch-portal-permissions.service
 
     local KRDP_UNIT=/usr/lib/systemd/user/app-org.kde.krdpserver.service
     [ -e "$KRDP_UNIT" ] || step_fail "krdp unit not found"
@@ -331,8 +323,8 @@ EOF
         as_user "$u" kwriteconfig6 --file krdpserverrc --group General --key Autostart true
     done
 
-    enable_user_unit "astronaut" /etc/systemd/user/w0vncserver.service
-    enable_user_unit "astronaut-kiosk" /etc/systemd/user/w0vncserver-kiosk.service
+    enable_user_unit "astronaut" "/etc/systemd/user/app-org.astroarch.vnc@.service" "app-org.astroarch.vnc@5900.service"
+    enable_user_unit "astronaut-kiosk" "/etc/systemd/user/app-org.astroarch.vnc@.service" "app-org.astroarch.vnc@5901.service"
     as_user "astronaut-kiosk" kwriteconfig6 --file krdpserverrc --group General --key ListenPort 3390
 
     systemctl daemon-reload

@@ -146,23 +146,32 @@ cp /home/astronaut/.astroarch/configs/50-timedate.rules /etc/polkit-1/rules.d/
 # Copy the systemd unit to create the AP the first boot
 cp /home/astronaut/.astroarch/systemd/create_ap.service /etc/systemd/system/
 
+# User units for krdp/vnc go in /etc/systemd/user: systemd doesn't find a unit
+# that is only linked in a .wants folder
+ln -s /home/astronaut/.astroarch/systemd/astroarch-portal-permissions.service /etc/systemd/user/astroarch-portal-permissions.service
+ln -s "/home/astronaut/.astroarch/systemd/app-org.astroarch.vnc@.service" "/etc/systemd/user/app-org.astroarch.vnc@.service"
+
+# The portal gives w0vncserver the app ID org.astroarch.vnc only if this file exists
+mkdir -p /usr/local/share/applications
+ln -s /home/astronaut/.astroarch/configs/org.astroarch.vnc.desktop /usr/local/share/applications/org.astroarch.vnc.desktop
+
 # Enable astronaut permissions krdp/vnc
-ln -s /home/astronaut/.astroarch/systemd/astroarch-portal-permissions.service /home/astronaut/.config/systemd/user/graphical-session.target.wants/astroarch-portal-permissions.service
+ln -s /etc/systemd/user/astroarch-portal-permissions.service /home/astronaut/.config/systemd/user/graphical-session.target.wants/astroarch-portal-permissions.service
 
 # Config KRDP
 # astronaut
-mkdir -p /home/astronaut/.local/share/krdpserver
+su astronaut -c "mkdir -p /home/astronaut/.local/share/krdpserver"
 certificatePath="/home/astronaut/.local/share/krdpserver/krdp.crt"
 certificateKeyPath="/home/astronaut/.local/share/krdpserver/krdp.key"
-su astronaut -c "openssl req -nodes -new -x509 -keyout '$certificateKeyPath' -out '$certificatePath' -days 1 -batch"
+su astronaut -c "openssl req -nodes -new -x509 -keyout '$certificateKeyPath' -out '$certificatePath' -days 3650 -batch -subj /CN=astroarch"
 su astronaut -c "kwriteconfig6 --file krdpserverrc --group General --key Certificate '$certificatePath'"
 su astronaut -c "kwriteconfig6 --file krdpserverrc --group General --key CertificateKey '$certificateKeyPath'"
 su astronaut -c "kwriteconfig6 --file krdpserverrc --group General --key SystemUserEnabled true"
 su astronaut -c "kwriteconfig6 --file krdpserverrc --group General --key Autostart true"
 ln -s /lib/systemd/user/app-org.kde.krdpserver.service /home/astronaut/.config/systemd/user/graphical-session.target.wants/app-org.kde.krdpserver.service
 
-# Enable vnc
-ln -s /home/astronaut/.astroarch/systemd/w0vncserver.service /home/astronaut/.config/systemd/user/graphical-session.target.wants/w0vncserver.service
+# Enable vnc on port 5900
+ln -s "/etc/systemd/user/app-org.astroarch.vnc@.service" "/home/astronaut/.config/systemd/user/graphical-session.target.wants/app-org.astroarch.vnc@5900.service"
 
 # Nuke notifications
 su astronaut -c "cat <<EOF >/home/astronaut/.config/plasmanotifyrc
@@ -253,18 +262,18 @@ usermod -aG astronaut-kiosk astronaut
 chmod -R 777 /home/astronaut-kiosk
 su astronaut-kiosk -c "LC_ALL=C.UTF-8 xdg-user-dirs-update --force"
 su astronaut-kiosk -c "mkdir -p /home/astronaut-kiosk/.local/{bin,share,state}"
-su astronaut-kiosk -c "mkdir -p /home/astronaut/.config/systemd/user/graphical-session.target.wants"
-su astronaut/kiosk -c "mkdir -p /home/astronaut/.config/systemd/user/default.target.wants"
+su astronaut-kiosk -c "mkdir -p /home/astronaut-kiosk/.config/systemd/user/graphical-session.target.wants"
+su astronaut-kiosk -c "mkdir -p /home/astronaut-kiosk/.config/systemd/user/default.target.wants"
 
 # Enable kiosk permissions krdp/vnc
-ln -s /home/astronaut/.astroarch/systemd/astroarch-portal-permissions.service /home/astronaut-kiosk/.config/systemd/user/graphical-session.target.wants/astroarch-portal-permissions.service
+ln -s /etc/systemd/user/astroarch-portal-permissions.service /home/astronaut-kiosk/.config/systemd/user/graphical-session.target.wants/astroarch-portal-permissions.service
 
 ## KRDP ##
 # astronaut-kiosk
 su astronaut-kiosk -c "mkdir -p /home/astronaut-kiosk/.local/share/krdpserver"
 kioskcertificatePath="/home/astronaut-kiosk/.local/share/krdpserver/krdp.crt"
 kioskcertificateKeyPath="/home/astronaut-kiosk/.local/share/krdpserver/krdp.key"
-su astronaut-kiosk -c "openssl req -nodes -new -x509 -keyout '$kioskcertificateKeyPath' -out '$kioskcertificatePath' -days 1 -batch"
+su astronaut-kiosk -c "openssl req -nodes -new -x509 -keyout '$kioskcertificateKeyPath' -out '$kioskcertificatePath' -days 3650 -batch -subj /CN=astroarch"
 su astronaut-kiosk -c "kwriteconfig6 --file krdpserverrc --group General --key Certificate '$kioskcertificatePath'"
 su astronaut-kiosk -c "kwriteconfig6 --file krdpserverrc --group General --key CertificateKey '$kioskcertificateKeyPath'"
 su astronaut-kiosk -c "kwriteconfig6 --file krdpserverrc --group General --key SystemUserEnabled true"
@@ -272,8 +281,8 @@ su astronaut-kiosk -c "kwriteconfig6 --file krdpserverrc --group General --key A
 su astronaut-kiosk -c "kwriteconfig6 --file krdpserverrc --group General --key ListenPort 3390"
 ln -s /lib/systemd/user/app-org.kde.krdpserver.service /home/astronaut-kiosk/.config/systemd/user/graphical-session.target.wants/app-org.kde.krdpserver.service
 
-# Enable kiosk vnc
-ln -s /home/astronaut/.astroarch/systemd/w0vncserver-kiosk.service /home/astronaut-kiosk/.config/systemd/user/graphical-session.target.wants/w0vncserver-kiosk.service
+# Enable kiosk vnc on port 5901
+ln -s "/etc/systemd/user/app-org.astroarch.vnc@.service" "/home/astronaut-kiosk/.config/systemd/user/graphical-session.target.wants/app-org.astroarch.vnc@5901.service"
 
 # Copy wallpapers
 su astronaut-kiosk -c "mkdir -p /home/astronaut-kiosk/Pictures/wallpapers"

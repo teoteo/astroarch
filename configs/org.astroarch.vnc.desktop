@@ -1,0 +1,7 @@
+# xdg-desktop-portal gives app-org.astroarch.vnc@.service the app ID org.astroarch.vnc
+# only if this file exists, so the remote desktop permission can name it
+[Desktop Entry]
+Type=Application
+Name=AstroArch VNC
+Exec=/usr/bin/w0vncserver
+NoDisplay=true

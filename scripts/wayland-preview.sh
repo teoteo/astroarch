@@ -44,7 +44,10 @@ if [ "$ASSUME_YES" -ne 1 ]; then
     [ "$answer" = "YES" ] || { echo "Nothing changed."; exit 1; }
 fi
 
-# The keep-X11 hook would abort the upgrade on purpose
+# The keep-X11 hook would abort the upgrade on purpose. It lets plasma-x11-session go once
+# /etc/astroarch/wayland exists, and update-astroarch reinstalls it, so set the marker as well
+mkdir -p /etc/astroarch
+touch /etc/astroarch/wayland
 rm -f "$KEEP_X11_HOOK"
 
 # Full upgrade; --ask 4 accepts removing plasma-x11-session, which conflicts with Plasma >= 6.8
